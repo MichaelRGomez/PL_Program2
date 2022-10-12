@@ -2,7 +2,7 @@ uses java.util.*
 
 //Main
 //const that holds instructions
-var bnfGrammar : String = "working bnf grammar\n------------------------------------------------------------------------------\nBNF Grammar\n------------------------------------------------------------------------------\n       program -> ENTER <assignments> END\n <assignments> -> <assignment> ; <assignment>\n                | <assignment>\n  <assignment> -> <button> = <instruction>\n      <button> -> A | B | C | D\n <instruction> -> forward | backward | left | right | spinleft | spinright\n------------------------------------------------------------------------------\nExample:\n ENTER A = backward ; D = forward END\n------------------------------------------------------------------------------"
+var bnfGrammar : String = "working bnf grammar\n--------------------------------------------------------------------------------------\nBNF Grammar\n--------------------------------------------------------------------------------------\n       program -> ENTER <assignments> EXIT\n <assignments> -> <assignment> <assignments>\n                | <assignment>\n  <assignment> -> <bname> = <instruction> ;\n       <bname> -> Button <button_name>\n <button_name> -> A | B | C | D \n <instruction> -> FORWARD | BACKWARD | LEFT | RIGHT | SLEFT | SRIGHT\n------------------------------------------------------------------------------\nExample:\nENTER Button D = FORWARD; Button A = BACKWARD; Button C = LEFT; Button B = RIGHT; EXIT\n--------------------------------------------------------------------------------------"
 var sc : Scanner = new Scanner(System.in) //scanner for input
 var prompt : String = "Input: "
 var input : String = null
@@ -16,7 +16,7 @@ function program(){
     input = sc.nextLine()
 
     //checking input
-    if(input == "HALT"){ break }
+    if(input == "QUIT"){ break }
   }
 }
 
