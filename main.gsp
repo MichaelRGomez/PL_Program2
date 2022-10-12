@@ -20,9 +20,4 @@ function program(){
   }
 }
 
-function main(){
-    program()
-}
-
-//final function call
-main()
+program()
