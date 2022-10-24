@@ -1,5 +1,6 @@
 //File : main.gsp
 uses java.util.*
+uses java.io.*
 
 //const that holds instructions
 var bnfGrammar : String = "\n--------------------------------------------------------------------------------------\nBNF Grammar\n--------------------------------------------------------------------------------------\n       program -> ENTER <assignments> EXIT\n <assignments> -> <assignment> <assignments>\n                | <assignment>\n  <assignment> -> <bname> = <instruction> ;\n       <bname> -> Button <button_name>\n <button_name> -> A | B | C | D \n <instruction> -> FORWARD | BACKWARD | LEFT | RIGHT | SLEFT | SRIGHT\n------------------------------------------------------------------------------\nExample:\nENTER Button D = FORWARD; Button A = BACKWARD; Button C = LEFT; Button B = RIGHT; EXIT\n--------------------------------------------------------------------------------------"
@@ -22,6 +23,7 @@ var input : String = null
  */
 class LangReco{
   //data members
+  var _copy : String
   var _input : List<String>
   var _errors : List<String> = new ArrayList<String>()
   var isValid : boolean = false
@@ -35,10 +37,16 @@ class LangReco{
 
   //public construction
   construct (rawString : String){
+    _copy = rawString
     _input = new ArrayList<String>(Arrays.asList(rawString.split(" ")))
   }
 
   //public
+  function getStringList() : List<String> {
+    var r : List<String> = new ArrayList<String>(Arrays.asList(_copy.split(" ")))
+    return r
+  }
+
   function recognize(){
     if(_input.size() < 6 ){
       _errors.add("Logic Error: insufficient amount of text to build a program")
@@ -282,6 +290,42 @@ class LangReco{
     _input.clear()
   }
 }
+class RobotFile{
+  var _sentence : List<String>
+  var _filename : String = "C:\\Users\\mikeg\\Desktop\\IZEBOT.BSP"
+
+  construct (validInput : List<String>){
+      _sentence = validInput
+  }
+
+  function generate(){
+    //creating file object to track the file we'll be manipulating
+    var output : File = new File(_filename)
+    output.delete()
+    output = new File(_filename)
+
+    //creating the output file
+    print("Attempting to generate BSP file")
+    if (!(output.createNewFile())){
+      print("Unable to create file")
+      return
+    }
+    //file has been created
+    _writeToFile()
+  }
+
+  function _writeToFile(){
+    //create the writing lists here then add them to the writer
+
+
+    //creating a writer to write to file
+    var w : FileWriter = new FileWriter(_filename)
+    print("Converting meta-language to PBASIC")
+    w.write("Wrapper\nNapper")
+    w.close()
+    print("Successfully created BSP file")
+  }
+}
 
 //main function
 function program(){
@@ -298,7 +342,9 @@ function program(){
       lr.recognize()
       if(lr.isValid){
         //the other functions
-        System.out.print("is correct !\n")
+        System.out.print("Generating File\n")
+        var o : RobotFile = new RobotFile(lr.getStringList())
+        o.generate()
       }
       input = sc.nextLine()
       //clear screen
