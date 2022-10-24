@@ -315,13 +315,29 @@ class RobotFile{
   }
 
   function _writeToFile(){
-    //create the writing lists here then add them to the writer
+    //required stuff
+    var headerBlock : String = "'{$STAMP BS2p}\n'{$STAMP 2.5}\nKEY        VAR   Byte\nMAIN:      DO\n           SERIN 3,2063,250,Timeout,[KEY]\n"
+    var footerOne : String = "\n           LOOP\nTimeout:   GOSUB Motor_OFF\n           GOTO Main\n'+++++ Movement Procedure ++++++++++++++++++++++++++++++\n"
+    var subForward : String = "\nForward:   HIGH 13 : LOW 12 : HIGH 15 : LOW 14 : RETURN\n"
+    var subBackward : String = "\nBackward:  HIGH 12 : LOW 13 : HIGH 14 : LOW 15 : RETURN\n"
+    var subTurnLeft : String = "\nTurnLeft:  HIGH 13 : LOW 12 : LOW  15 : LOW 14 : RETURN\n"
+    var subTurnRight : String = "\nTurnRight: LOW  13 : LOW 12 : HIGH 15 : LOW 14 : RETURN\n"
+    var subSpinLeft : String = "\nSpinLeft:  HIGH 13 : LOW 12 : HIGH 14 : LOW 15 : RETURN\n"
+    var subSpingRight : String = "\nSpinRight: HIGH 12 : LOW 13 : HIGH 15 : LOW 14 : RETURN\n"
+    var footerTwo : String = "\nMotor_OFF: LOW  13 : LOW 12 : LOW  15 : LOW 14 : RETURN\n'+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
 
+    //PBASIC conversion
+    //var bodyBlock : String = //function
+    //var subRoutineBlock : String = //function
 
     //creating a writer to write to file
     var w : FileWriter = new FileWriter(_filename)
     print("Converting meta-language to PBASIC")
-    w.write("Wrapper\nNapper")
+    w.write(headerBlock)
+    //w.write(bodyBlock)
+    w.write(footerOne)
+    //w.write(subRoutineBlock)
+    w.write(footerTwo)
     w.close()
     print("Successfully created BSP file")
   }
