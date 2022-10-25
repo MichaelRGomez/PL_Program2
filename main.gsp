@@ -23,6 +23,7 @@ var input : String = null
  */
 class LangReco{
   //data members
+  var _returnString : String = ""
   var _copy : String
   var _input : List<String>
   var _errors : List<String> = new ArrayList<String>()
@@ -45,6 +46,10 @@ class LangReco{
   function getStringList() : List<String> {
     var r : List<String> = new ArrayList<String>(Arrays.asList(_copy.split(" ")))
     return r
+  }
+
+  function metaLangCode() : String {
+    return _returnString
   }
 
   function recognize(){
@@ -99,6 +104,11 @@ class LangReco{
           if(_hasBeenUsed(lexeme)){
             _endAnalysis()
           } else {
+            _returnString = _returnString + ","
+            _returnString = _returnString + lexeme
+            _returnString = _returnString + ","
+            _returnString = _returnString + lexeme.toLowerCase()
+            _returnString = _returnString + ","
             _patternRoute = 3
             _input.remove(0)
             break
@@ -125,6 +135,7 @@ class LangReco{
         if(_hasSemicolon(lexeme)){
           //checking if the instruction is correct with the semicolon
           if(_isInstructionS(lexeme)){
+            _returnString= _returnString + _correctInstruction(lexeme)
             _patternRoute = 6
             _input.remove(0)
           } else {
@@ -133,6 +144,7 @@ class LangReco{
         } else {
           //checking if the instruction is correct without the semicolon
           if(_isInstruction(lexeme)){
+            _returnString= _returnString + _correctInstruction(lexeme)
             _patternRoute = 5
             _input.remove(0)
           } else{
@@ -289,13 +301,32 @@ class LangReco{
   function _endAnalysis(){
     _input.clear()
   }
+
+  function _correctInstruction(badInstruction : String) : String{
+    switch (badInstruction){
+      case "FORWARD": return "Forward"
+      case "BACKWARD": return "Backward"
+      case "LEFT": return "TurnLeft"
+      case "RIGHT": return "TurnRight"
+      case "SRIGHT": return "SpinLeft"
+      case "SLEFT": return "SpinRight"
+      case "FORWARD;": return "Forward"
+      case "BACKWARD;": return "Backward"
+      case "LEFT;": return "TurnLeft"
+      case "RIGHT;": return "TurnRight"
+      case "SRIGHT;": return "SpinLeft"
+      case "SLEFT;": return "SpinRight"
+    }
+    return ""
+  }
 }
 class RobotFile{
-  var _sentence : List<String>
+  var _code : List<String>
   var _filename : String = "C:\\Users\\mikeg\\Desktop\\IZEBOT.BSP"
 
-  construct (validInput : List<String>){
-      _sentence = validInput
+  construct (metaCode : String){
+    _code = new ArrayList<String>(Arrays.asList(metaCode.split(",")))
+    _code.remove(0)
   }
 
   function generate(){
@@ -315,31 +346,81 @@ class RobotFile{
   }
 
   function _writeToFile(){
-    //required stuff
-    var headerBlock : String = "'{$STAMP BS2p}\n'{$STAMP 2.5}\nKEY        VAR   Byte\nMAIN:      DO\n           SERIN 3,2063,250,Timeout,[KEY]\n"
-    var footerOne : String = "\n           LOOP\nTimeout:   GOSUB Motor_OFF\n           GOTO Main\n'+++++ Movement Procedure ++++++++++++++++++++++++++++++\n"
-    var subForward : String = "\nForward:   HIGH 13 : LOW 12 : HIGH 15 : LOW 14 : RETURN\n"
-    var subBackward : String = "\nBackward:  HIGH 12 : LOW 13 : HIGH 14 : LOW 15 : RETURN\n"
-    var subTurnLeft : String = "\nTurnLeft:  HIGH 13 : LOW 12 : LOW  15 : LOW 14 : RETURN\n"
-    var subTurnRight : String = "\nTurnRight: LOW  13 : LOW 12 : HIGH 15 : LOW 14 : RETURN\n"
-    var subSpinLeft : String = "\nSpinLeft:  HIGH 13 : LOW 12 : HIGH 14 : LOW 15 : RETURN\n"
-    var subSpingRight : String = "\nSpinRight: HIGH 12 : LOW 13 : HIGH 15 : LOW 14 : RETURN\n"
-    var footerTwo : String = "\nMotor_OFF: LOW  13 : LOW 12 : LOW  15 : LOW 14 : RETURN\n'+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
+    if(!(_code.isEmpty())){
 
-    //PBASIC conversion
-    //var bodyBlock : String = //function
-    //var subRoutineBlock : String = //function
+      //required stuff
+      var headerBlock : String = "'{$STAMP BS2p}\n'{$STAMP 2.5}\nKEY        VAR   Byte\nMAIN:      DO\n           SERIN 3,2063,250,Timeout,[KEY]\n"
+      var footerOne : String = "\n           LOOP\nTimeout:   GOSUB Motor_OFF\n           GOTO Main\n'+++++ Movement Procedure ++++++++++++++++++++++++++++++\n"
+      var footerTwo : String = "\nMotor_OFF: LOW  13 : LOW 12 : LOW  15 : LOW 14 : RETURN\n'+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
 
-    //creating a writer to write to file
-    var w : FileWriter = new FileWriter(_filename)
-    print("Converting meta-language to PBASIC")
-    w.write(headerBlock)
-    //w.write(bodyBlock)
-    w.write(footerOne)
-    //w.write(subRoutineBlock)
-    w.write(footerTwo)
-    w.close()
-    print("Successfully created BSP file")
+      //creating a writer to write to file
+      var w : FileWriter = new FileWriter(_filename)
+      print("Converting meta-language to PBASIC")
+      w.write(headerBlock)
+      _genBody(w)
+      w.write(footerOne)
+      _genSub(w)
+      w.write(footerTwo)
+      w.close()
+      print("Successfully created BSP file")
+    }
+  }
+
+  function _genBody( w : FileWriter){
+    var limit : int = ((_code.size()) / 3)
+    var counter : int = 0
+    var x : int = 0
+    var s : String = ""
+
+    while(!( counter == limit)){
+      s = s + "\nIF KEY = \""
+      s = s + _code.get(x)
+      s = s + "\" OR KEY = \""
+      s = s + _code.get(x+1)
+      s = s + "\" THEN GOSUB "
+      s = s + _code.get(x+2)
+      s = s + "\n"
+      w.write(s)
+      s = ""
+      x = x + 3
+      counter++
+    }
+  }
+  function _genSub(w : FileWriter){
+    var limit : int = ((_code.size()) / 3)
+    var counter : int = 0
+    var x : int = 0
+
+    while(counter != limit){
+      switch(_code.get(x+2)){
+        case "Forward": {
+          w.write("\nForward: HIGH 13 : LOW 12 : HIGH 15 : LOW 14 : RETURN\n")
+          break
+        }
+        case "Backward": {
+          w.write("\nBackward: HIGH 12 : LOW 13 : HIGH 14 : LOW 15 : RETURN\n")
+          break
+        }
+        case "TurnLeft": {
+          w.write("\nTurnLeft: HIGH 13 : LOW 12 : LOW 15 : LOW 14 : RETURN\n")
+          break
+        }
+        case "TurnRight": {
+          w.write("\nTurnRight: LOW 13 : LOW 12 : HIGH 15 : LOW 14 : RETURN\n")
+          break
+        }
+        case "SpinLeft": {
+          w.write("\nSpinLeft: HIGH 13 : LOW 12 : HIGH 14 : LOW 15 : RETURN\n")
+          break
+        }
+        case "SpingRight": {
+          w.write("\nSpinRight: HIGH 12 : LOW 13 : HIGH 15 : LOW 14 : RETURN\n")
+          break
+        }
+      }
+      x = x + 3
+      counter++
+    }
   }
 }
 
@@ -359,7 +440,7 @@ function program(){
       if(lr.isValid){
         //the other functions
         System.out.print("Generating File\n")
-        var o : RobotFile = new RobotFile(lr.getStringList())
+        var o : RobotFile = new RobotFile(lr.metaLangCode())
         o.generate()
       }
       input = sc.nextLine()
