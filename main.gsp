@@ -349,7 +349,7 @@ class RobotFile{
     if(!(_code.isEmpty())){
 
       //required stuff
-      var headerBlock : String = "'{$STAMP BS2p}\n'{$STAMP 2.5}\nKEY        VAR   Byte\nMAIN:      DO\n           SERIN 3,2063,250,Timeout,[KEY]\n"
+      var headerBlock : String = "'{$STAMP BS2p}\n'{$PBASIC 2.5}\nKEY        VAR   Byte\nMAIN:      DO\n           SERIN 3,2063,250,Timeout,[KEY]\n"
       var footerOne : String = "\n           LOOP\nTimeout:   GOSUB Motor_OFF\n           GOTO Main\n'+++++ Movement Procedure ++++++++++++++++++++++++++++++\n"
       var footerTwo : String = "\nMotor_OFF: LOW  13 : LOW 12 : LOW  15 : LOW 14 : RETURN\n'+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
 
@@ -424,6 +424,154 @@ class RobotFile{
   }
 }
 
+class Deri{
+  var _list : List<String>
+  var _Plist : List<String>
+  var _mutliAssign : boolean = false
+  var _processing : boolean = true
+  var _masterIndex : int = -1
+
+  construct (sentence : String){
+    _list = new ArrayList<String>(Arrays.asList(sentence.split(" ")))
+    _Plist = new ArrayList<String>()
+  }
+
+  function derivate(){
+    _cleanList()
+    _masterIndex = _list.size() - 1
+
+    _AprintList()
+    while (_processing){
+      _reverseDerivate(_masterIndex)
+    }
+    _printD()
+  }
+
+  //helper functions
+  function _reverseDerivate(m : int){
+    if(_list.size() == 3){
+      _processing = false
+      return
+    }
+
+    switch(_list.get(m)){
+      case "EXIT":{
+        _list.set(m-2, "<instruction>")
+        _masterIndex = m - 3
+        break
+      }
+      case "=":{
+        _list.set(m-1, "<button_name>")
+        _masterIndex = m -2
+        break
+      }
+      case "Button":{
+        _list.set(m, "<bname>")
+        _list.remove(m+1)
+        break
+      }
+      case "<bname>":{
+        _list.set(m, "<assignment>")
+        _list.remove(m+1)
+        _list.remove(m+1)
+        _list.remove(m+1)
+        break
+      }
+      case "<assignment>":{
+        if(_list.get(m+1) == "<assignments>"){
+          _list.remove(m)
+        }
+        else{
+          _list.set(m, "<assignments>")
+        }
+        break
+      }
+      case "<assignments>":{
+        if(_list.get(m-1) == "ENTER"){
+          _list.remove(m)
+          _processing = false
+        } else {
+          _list.set(m-2, "<instruction>")
+          _masterIndex = m - 3
+        }
+        break
+      }
+    }
+    _AprintList()
+}
+
+  function _AprintList(){
+    var holder : String = ""
+    for ( i in _list){
+      holder = holder + i + " "
+    }
+    _Plist.add(holder)
+  }
+
+  function _printD(){
+    var copy : List<String> = new ArrayList<String>()
+    for (i in _Plist){
+      copy.add(0, i)
+    }
+
+    for(j in copy){
+      System.out.print(j + "\n")
+    }
+  }
+
+  function _cleanList(){
+    var i : int = 0
+
+    while (i != _list.size()){
+      if(_checkForSemicolon(_list.get(i),i)){
+        i = i + 2
+      } else {
+        i++
+      }
+    }
+  }
+
+  function _checkForSemicolon( lexeme : String, i : int) : boolean{
+    var temp : List<String> = new ArrayList<String>(Arrays.asList(lexeme.split("")))
+    var mainL : String = ""
+    var subL : String = ""
+
+    if(temp.size() == 1){
+      return true
+    } else {
+      for (x in temp) {
+        if (x.equals(";")) {
+          mainL = lexeme.substring(0, lexeme.length() - 1)
+          subL = ";"
+
+          _list.set(i, mainL)
+          _list.add(i + 1, subL)
+          return true
+        }
+      }
+      return false
+    }
+  }
+}
+
+/*//parse tree function
+function parseTree(const int  primNoode(0), int noodeCount(), int lNode(), ){
+
+//check if the derivation was complete successfully
+  if(derive() == true){
+    while (primNoode == 0)//checkif the first noode is zero. root noode
+      if(lNode != noodeCount(i)) //cjeck if leftNoode and NoodeCount are different
+        lnode++ && noodeCount++; //increment both values
+    System.out.print("value(string)"); //print the string variable in the
+
+//need to learn how to style tree
+
+  }//print out error
+  else
+    System.out.print("!!----------Invalid input for Parse Tree----------!!")
+
+}*/
+
 //main function
 function program(){
   while(true){
@@ -438,8 +586,15 @@ function program(){
       var lr : LangReco = new LangReco(input)
       lr.recognize()
       if(lr.isValid){
-        //the other functions
-        System.out.print("Generating File\n")
+        //Derivation
+        System.out.print("\nDerivation\n")
+        var d : Deri = new Deri(input)
+        d.derivate()
+
+        //Parse Tree
+
+        //Generating Output File
+        System.out.print("\nGenerating File\n")
         var o : RobotFile = new RobotFile(lr.metaLangCode())
         o.generate()
       }
