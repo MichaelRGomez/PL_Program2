@@ -9,6 +9,7 @@ var bnfGrammar : String = "\n---------------------------------------------------
 var sc : Scanner = new Scanner(System.in)
 var prompt : String = "Input: "
 var input : String = null
+var dump : String = null
 
 //All other classes, functions
 
@@ -138,6 +139,8 @@ class LangReco{
             _returnString= _returnString + _correctInstruction(lexeme)
             _patternRoute = 6
             _input.remove(0)
+            _isIncomplete()
+
           } else {
             _endAnalysis()
           }
@@ -147,6 +150,7 @@ class LangReco{
             _returnString= _returnString + _correctInstruction(lexeme)
             _patternRoute = 5
             _input.remove(0)
+            _isIncomplete()
           } else{
             _endAnalysis()
           }
@@ -159,6 +163,7 @@ class LangReco{
         if(_isSemicolon(lexeme)){
           _patternRoute = 6
           _input.remove(0)
+          _isIncomplete()
         }else {
           _endAnalysis()
         }
@@ -245,6 +250,13 @@ class LangReco{
     } else {
       _errors.add("Syntax Error: expected \"ENTER\", found \"" + lexeme + "\" instead.")
       return false
+    }
+  }
+
+  function _isIncomplete(){
+    if(_input.size() == 0){
+      _errors.add("Syntax Error: incompleted instruction")
+      _endAnalysis()
     }
   }
 
@@ -423,7 +435,6 @@ class RobotFile{
     }
   }
 }
-
 class Deri{
   var _list : List<String>
   var _Plist : List<String>
@@ -554,23 +565,240 @@ class Deri{
   }
 }
 
-/*//parse tree function
-function parseTree(const int  primNoode(0), int noodeCount(), int lNode(), ){
+// v_v helper function for PTree
+class prefix{
+  var _actualPrefix : List<String>
+  var _layerCount : int
+  var space : String = "`-> "
 
-//check if the derivation was complete successfully
-  if(derive() == true){
-    while (primNoode == 0)//checkif the first noode is zero. root noode
-      if(lNode != noodeCount(i)) //cjeck if leftNoode and NoodeCount are different
-        lnode++ && noodeCount++; //increment both values
-    System.out.print("value(string)"); //print the string variable in the
+  construct (){
+    _actualPrefix = new ArrayList<String>()
+    _layerCount = 0
+  }
 
-//need to learn how to style tree
+  function addLayer( c : String){
+    var l : int = c.length()
+    var x : int = 0
+    var temp : String = ""
+    while (x != l){
+      temp = temp + " "
+      x++
+    }
+    _actualPrefix.add(temp)
+    _layerCount++
+  }
 
-  }//print out error
-  else
-    System.out.print("!!----------Invalid input for Parse Tree----------!!")
+  function addLayerBranch(c : String){
+    var l : int = c.length()
+    var x : int = 1
+    var temp : String = ""
+    while (x != l){
+      temp = temp + " "
+      x++
+    }
+    _actualPrefix.add(temp + "|")
+    _layerCount++
+  }
 
-}*/
+  function removeLayer(){
+    _actualPrefix.remove(_actualPrefix.size() - 1)
+  }
+
+  function reset(){
+    _actualPrefix.clear()
+    _layerCount = 0
+  }
+
+  function getPrefix() : String{
+    var returnString : String = ""
+    var x : int = 0
+    var y : int = _actualPrefix.size()
+
+    while (x != y){
+      returnString = returnString + _actualPrefix.get(x)
+      x++
+    }
+    return returnString + "`-> "
+  }
+}
+class PTree{
+  var _list : List<String>
+  var _Plist : List<String>
+  var _pre : prefix
+  var semiColons : int
+
+  construct (sentence : String){
+    _list = new ArrayList<String>(Arrays.asList(sentence.split(" ")))
+    _Plist = new ArrayList<String>()
+    _pre = new prefix()
+  }
+
+  function drawTree(){
+    _cleanList()
+    semiColons = _countSemiColons()
+
+    _list.add(0, "program")
+    _buildTree(_list.get(0))
+
+    for( i in _Plist){
+      System.out.println(i)
+    }
+  }
+
+  function _buildTree(s : String){
+    switch(s){
+      case "program":{
+        _Plist.add(_list.get(0))
+        _pre.addLayerBranch(_list.get(0))
+        _list.remove(0)
+        _buildTree(_list.get(0))
+        break
+      }
+      case "ENTER":{
+        _Plist.add(_pre.getPrefix() + _list.get(0))
+        _list.remove(0)
+        _list.add(0, "<assignments>")
+        _buildTree(_list.get(0))
+        break
+      }
+      case "<assignments>":{
+        if (semiColons != 1){
+          _pmAssignment(_list.get(0))
+        } else {
+          _psAssignment(_list.get(0))
+        }
+        _buildTree(_list.get(0))
+        break
+      }
+      case "EXIT":{
+        _pre.reset()
+        _pre.addLayer("program")
+        _Plist.add(_pre.getPrefix() + _list.get(0))
+        _list.remove(0)
+      }
+      break
+    }
+  }
+  function _pmAssignment(s : String){
+    _Plist.add(_pre.getPrefix() + _list.get(0))
+    _pre.addLayerBranch("<assignments>" + _pre.space)
+    _list.remove(0)
+
+    _list.add(0, "<assignment>")
+    _Plist.add(_pre.getPrefix() + _list.get(0))
+    _pre.addLayerBranch(_list.get(0) + _pre.space)
+    _list.remove(0)
+
+    _printAssignment()
+
+    _list.add(0,"<assignments>")
+  }
+  function _psAssignment(s : String){
+    _pre.removeLayer()
+    _pre.addLayer("<assignments>" + _pre.space)
+    _Plist.add(_pre.getPrefix() + "<assignment>")
+    _pre.addLayer("<assignment>" + _pre.space)
+    _list.remove(0)
+
+    _list.add(0, "<assignment>")
+    _Plist.add(_pre.getPrefix() + _list.get(0))
+    _pre.addLayerBranch(_list.get(0) + _pre.space)
+    _list.remove(0)
+
+    _printAssignment()
+  }
+  function _printAssignment(){
+    _list.add(0, "<bname>")
+    _Plist.add(_pre.getPrefix() + _list.get(0))
+    _pre.addLayerBranch(_list.get(0) + _pre.space)
+    _list.remove(0)
+
+    _Plist.add(_pre.getPrefix() + _list.get(0))
+    _list.remove(0)
+
+    _pre.removeLayer()
+    _pre.addLayer("<bname>" + _pre.space)
+
+    _list.add(0, "<button_name>")
+    _Plist.add(_pre.getPrefix() + _list.get(0))
+    _pre.removeLayer()
+    _pre.addLayer("<bname>" + _pre.space)
+    _pre.addLayer(_list.get(0) + _pre.space)
+    _list.remove(0)
+
+    _Plist.add(_pre.getPrefix() + _list.get(0))
+    _list.remove(0)
+
+    _pre.removeLayer()
+    _pre.removeLayer()
+
+    _Plist.add(_pre.getPrefix() + _list.get(0))
+    _list.remove(0)
+
+    _list.add(0, "<instruction>")
+    _Plist.add(_pre.getPrefix() + _list.get(0))
+    _pre.addLayer(_list.get(0) + _pre.space)
+    _list.remove(0)
+
+    _Plist.add(_pre.getPrefix() + _list.get(0))
+    _list.remove(0)
+
+    _pre.removeLayer()
+
+    _pre.removeLayer()
+    _pre.addLayer("<assignments" + _pre.space)
+    _Plist.add(_pre.getPrefix() + _list.get(0))
+    _list.remove(0)
+    semiColons--
+    _pre.removeLayer()
+    _pre.removeLayer()
+    _pre.addLayer("<assignments" + _pre.space)
+  }
+
+  function _cleanList(){
+    var i : int = 0
+    while (i != _list.size()){
+      if(_checkForSemicolon(_list.get(i),i)){
+        i = i + 2
+      } else {
+        i++
+      }
+    }
+  }
+  function _checkForSemicolon( lexeme : String, i : int) : boolean{
+    var temp : List<String> = new ArrayList<String>(Arrays.asList(lexeme.split("")))
+    var mainL : String = ""
+    var subL : String = ""
+
+    if(temp.size() == 1){
+      return true
+    } else {
+      for (x in temp) {
+        if (x.equals(";")) {
+          mainL = lexeme.substring(0, lexeme.length() - 1)
+          subL = ";"
+
+          _list.set(i, mainL)
+          _list.add(i + 1, subL)
+          return true
+        }
+      }
+      return false
+    }
+  }
+  function _countSemiColons() : int{
+    var counter : int = 0
+    var i : int = _list.size()
+    var x : int = 0
+    while (x != i){
+      if ( _list.get(x) == ";"){
+        counter++
+      }
+      x++
+    }
+    return counter
+  }
+}
 
 //main function
 function program(){
@@ -590,16 +818,22 @@ function program(){
         System.out.print("\nDerivation\n")
         var d : Deri = new Deri(input)
         d.derivate()
+        dump = sc.nextLine()
 
         //Parse Tree
+        System.out.print("\nParse Tree\n")
+        var p : PTree = new PTree(input)
+        p.drawTree()
+        dump = sc.nextLine()
 
         //Generating Output File
         System.out.print("\nGenerating File\n")
         var o : RobotFile = new RobotFile(lr.metaLangCode())
         o.generate()
+        dump = sc.nextLine()
+      } else {
+        dump = sc.nextLine()
       }
-      input = sc.nextLine()
-      //clear screen
     }
   }
 }
