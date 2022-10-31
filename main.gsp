@@ -355,6 +355,18 @@ class RobotFile{
     }
     //file has been created
     _writeToFile()
+    _displayFile()
+  }
+
+  function _displayFile(){
+    var s : String = ""
+    var reading = new File(_filename)
+    var scanner = new Scanner(reading)
+    while(scanner.hasNextLine()){
+      s = scanner.nextLine()
+      System.out.println(s)
+    }
+    scanner.close()
   }
 
   function _writeToFile(){
@@ -694,10 +706,10 @@ class PTree{
     _list.add(0,"<assignments>")
   }
   function _psAssignment(s : String){
-    _pre.removeLayer()
+    //_pre.removeLayer()
+    //_pre.addLayer("<assignments>" + _pre.space)
+    _Plist.add(_pre.getPrefix() + "<assignments>")
     _pre.addLayer("<assignments>" + _pre.space)
-    _Plist.add(_pre.getPrefix() + "<assignment>")
-    _pre.addLayer("<assignment>" + _pre.space)
     _list.remove(0)
 
     _list.add(0, "<assignment>")
